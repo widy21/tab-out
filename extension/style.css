@@ -5,37 +5,39 @@
    ============================================================ */
 
 :root {
-  --ink: #1a1613;
-  --paper: #f8f5f0;
-  --warm-gray: #e8e2da;
-  --muted: #9a918a;
-  --accent-amber: #c8713a;
-  --accent-sage: #5a7a62;
-  --accent-slate: #5a6b7a;
-  --accent-rose: #b35a5a;
-  --status-active: #3d7a4a;
-  --status-cooling: #b8892e;
-  --status-abandoned: #b35a5a;
-  --card-bg: #fffdf9;
-  --shadow: rgba(26, 22, 19, 0.06);
+  --ink: #e8e4df;
+  --paper: #0c1220;
+  --warm-gray: rgba(255,255,255,0.08);
+  --muted: #8892a8;
+  --accent-amber: #e8a05a;
+  --accent-sage: #7aad7e;
+  --accent-slate: #7a9ab8;
+  --accent-rose: #d47272;
+  --status-active: #5aad6e;
+  --status-cooling: #d4a04a;
+  --status-abandoned: #d47272;
+  --card-bg: rgba(20, 28, 50, 0.72);
+  --shadow: rgba(0, 0, 0, 0.35);
+  --font-scale: 1;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--paper);
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--paper) url('bg.jpg') center/cover no-repeat fixed;
   color: var(--ink);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  font-size: 17px;
 }
 
-/* Subtle paper texture */
+/* Dark overlay to ensure text readability over the background image */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  background: rgba(8, 14, 30, 0.82);
   pointer-events: none;
   z-index: 0;
 }
@@ -57,28 +59,44 @@ body::before {
 /* ---- Header ---- */
 header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 48px;
-  padding-bottom: 24px;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--warm-gray);
 }
 
+.header-left {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
 .header-left h1 {
-  font-family: 'Newsreader', serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-weight: 300;
-  font-size: 28px;
+  font-size: calc(26px * var(--font-scale));
   letter-spacing: -0.5px;
   color: var(--ink);
-  margin-bottom: 4px;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .header-left .date {
-  font-size: 13px;
+  font-size: calc(12px * var(--font-scale));
   color: var(--muted);
   font-weight: 400;
   letter-spacing: 0.5px;
-  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
 }
 
 /* ---- Tab cleanup banner ---- */
@@ -127,7 +145,7 @@ header {
 }
 
 .tab-cleanup-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px;
   font-weight: 600;
   padding: 8px 20px;
@@ -194,7 +212,7 @@ header {
 }
 
 .section-header h2 {
-  font-family: 'Newsreader', serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-weight: 400;
   font-size: 18px;
   font-style: italic;
@@ -477,7 +495,7 @@ header {
 
 .mission-page-count {
   font-size: 20px;
-  font-family: 'Newsreader', serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-weight: 300;
   color: var(--ink);
   line-height: 1;
@@ -499,7 +517,7 @@ header {
 
 .action-btn {
   font-size: 11px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-weight: 500;
   padding: 5px 14px;
   border-radius: 4px;
@@ -572,7 +590,7 @@ header {
   transform: translateX(-50%) translateY(80px);
   background: var(--ink);
   color: var(--paper);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-size: 13px;
   font-weight: 500;
   padding: 12px 24px;
@@ -618,7 +636,7 @@ footer {
 }
 
 .stat-num {
-  font-family: 'Newsreader', serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-size: 28px;
   font-weight: 300;
   color: var(--ink);
@@ -640,7 +658,7 @@ footer {
 }
 
 .refresh-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-size: 11px;
   font-weight: 500;
   color: var(--accent-amber);
@@ -721,8 +739,8 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: rgba(90, 122, 98, 0.1);
-  border: 1.5px solid rgba(90, 122, 98, 0.3);
+  background: rgba(90, 122, 98, 0.15);
+  border: 1.5px solid rgba(90, 122, 98, 0.4);
 
   /* Soft sage glow */
   box-shadow: 0 0 0 8px rgba(90, 122, 98, 0.05),
@@ -749,7 +767,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .empty-title {
-  font-family: 'Newsreader', serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-size: 20px;
   font-weight: 400;
   font-style: italic;
@@ -833,7 +851,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 /* "Update now" button — small, filled, sage green */
 .update-banner-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px;
   font-weight: 500;
   color: #fff;
@@ -874,7 +892,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .update-banner-dismiss:hover {
-  background: rgba(26, 22, 19, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--ink);
 }
 
@@ -1059,7 +1077,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .archive-toggle {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px;
   font-weight: 500;
   color: var(--muted);
@@ -1100,7 +1118,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .archive-search {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px;
   width: 100%;
   padding: 8px 12px;
@@ -1155,4 +1173,262 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   color: var(--muted);
   opacity: 0.6;
   flex-shrink: 0;
+}
+
+
+/* ================================================================
+   FAVORITES BAR — Quick-access site icons in the header
+   ================================================================ */
+
+.favorites-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+/* Individual favorite icon */
+.favorite-item {
+  width: 76px;
+  min-height: 72px;
+  border-radius: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.favorite-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px var(--shadow);
+  border-color: rgba(200, 113, 58, 0.25);
+}
+
+.favorite-item.dragging {
+  opacity: 0.4;
+  transform: scale(0.95);
+}
+
+.favorite-item.drag-over {
+  border-color: var(--accent-amber);
+  box-shadow: 0 0 0 2px rgba(200, 113, 58, 0.15);
+}
+
+.favorite-favicon {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.favorite-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  max-width: 100%;
+  line-height: 1.3;
+  pointer-events: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Remove button (visible in edit mode) */
+.favorite-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--status-abandoned);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1;
+  padding: 0;
+  transition: transform 0.15s;
+}
+
+.favorite-remove:hover {
+  transform: scale(1.15);
+}
+
+.favorites-bar.is-editing .favorite-remove {
+  display: flex;
+}
+
+/* Add-new button */
+.favorite-add {
+  width: 76px;
+  height: 72px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1.5px dashed var(--warm-gray);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.favorite-add:hover {
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+  background: rgba(200, 113, 58, 0.04);
+}
+
+.favorite-add svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Inline add form */
+.favorite-add-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  border-radius: 10px;
+  padding: 6px 10px;
+  animation: fadeUp 0.2s ease both;
+}
+
+.favorite-add-form input {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  outline: none;
+  width: 160px;
+}
+
+.favorite-add-form input::placeholder {
+  color: var(--muted);
+}
+
+.favorite-add-form button {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.favorite-add-form .btn-add {
+  background: var(--accent-sage);
+  color: white;
+}
+
+.favorite-add-form .btn-add:hover {
+  opacity: 0.85;
+}
+
+.favorite-add-form .btn-cancel {
+  background: transparent;
+  color: var(--muted);
+}
+
+.favorite-add-form .btn-cancel:hover {
+  color: var(--ink);
+}
+
+/* Edit-mode toggle */
+.favorite-edit-btn {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 5px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.favorite-edit-btn:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.favorite-edit-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.favorites-bar.is-editing .favorite-edit-btn {
+  color: var(--accent-amber);
+  background: rgba(200, 113, 58, 0.08);
+}
+
+/* Auto-detected hint */
+.favorite-auto-hint {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+
+/* ================================================================
+   FONT SCALE CONTROLS
+   ================================================================ */
+
+.font-scale-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.font-scale-btn {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--warm-gray);
+  background: var(--card-bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.font-scale-btn:hover {
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+  background: rgba(200, 113, 58, 0.06);
 }

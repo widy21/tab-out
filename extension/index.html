@@ -21,10 +21,14 @@
        ================================================================ -->
   <header>
     <div class="header-left">
-      <!-- "Good afternoon" — written by getGreeting() in app.js -->
+      <!-- 问候语 — written by getGreeting() in app.js -->
       <h1 id="greeting"></h1>
-      <!-- "Friday, April 4, 2026" — written by getDateDisplay() in app.js -->
+      <!-- 日期 — written by getDateDisplay() in app.js -->
       <div class="date" id="dateDisplay"></div>
+    </div>
+    <div class="header-right">
+      <!-- Quick-access favorites — rendered by renderFavorites() in app.js -->
+      <div class="favorites-bar" id="favoritesBar"></div>
     </div>
   </header>
 
@@ -40,10 +44,10 @@
         </svg>
       </div>
       <div class="tab-cleanup-text">
-        You have <strong id="tabOutDupeCount"></strong> Tab Out tabs open. Keep just this one?
+        你有 <strong id="tabOutDupeCount"></strong> 个 Tab Out 页面打开。只保留这一个？
       </div>
     </div>
-    <button class="tab-cleanup-btn" data-action="close-tabout-dupes">Close extras</button>
+    <button class="tab-cleanup-btn" data-action="close-tabout-dupes">关闭多余页面</button>
   </div>
 
   <!-- ================================================================
@@ -57,7 +61,7 @@
     <!-- LEFT COLUMN: Open tabs -->
     <div class="active-section" id="openTabsSection" style="display:none">
       <div class="section-header">
-        <h2 id="openTabsSectionTitle">Right now</h2>
+        <h2 id="openTabsSectionTitle">打开的标签</h2>
         <div class="section-line"></div>
         <div class="section-count" id="openTabsSectionCount"></div>
       </div>
@@ -67,7 +71,7 @@
     <!-- RIGHT COLUMN: Saved for Later checklist -->
     <div class="deferred-column" id="deferredColumn" style="display:none">
       <div class="section-header">
-        <h2>Saved for later</h2>
+        <h2>稍后查看</h2>
         <div class="section-line"></div>
         <div class="section-count" id="deferredCount"></div>
       </div>
@@ -77,18 +81,18 @@
 
       <!-- Empty state — shown when no active deferred tabs -->
       <div class="deferred-empty" id="deferredEmpty" style="display:none">
-        Nothing saved. Living in the moment.
+        暂无保存。活在当下。
       </div>
 
       <!-- Archive section — collapsed by default -->
       <div class="deferred-archive" id="deferredArchive" style="display:none">
         <button class="archive-toggle" id="archiveToggle">
           <svg class="archive-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
-          Archive
+          归档
           <span class="archive-count" id="archiveCount"></span>
         </button>
         <div class="archive-body" id="archiveBody" style="display:none">
-          <input type="text" class="archive-search" id="archiveSearch" placeholder="Search archived tabs...">
+          <input type="text" class="archive-search" id="archiveSearch" placeholder="搜索归档标签...">
           <div class="archive-list" id="archiveList"></div>
         </div>
       </div>
@@ -103,11 +107,15 @@
     <div class="footer-stats">
       <div class="stat">
         <div class="stat-num" id="statTabs">—</div>
-        <div class="stat-label">Open tabs</div>
+        <div class="stat-label">打开标签</div>
       </div>
     </div>
     <div class="last-refresh">
       <span style="color: var(--muted); font-size: 11px;"><a href="https://github.com/zarazhangrui/tab-out" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Tab Out</a> by <a href="https://x.com/zarazhangrui" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Zara</a></span>
+    </div>
+    <div class="font-scale-controls">
+      <button class="font-scale-btn" data-action="font-scale-down" title="缩小字体">A-</button>
+      <button class="font-scale-btn" data-action="font-scale-up" title="放大字体">A+</button>
     </div>
   </footer>
 
@@ -127,7 +135,7 @@
 
 <!-- Personal config (gitignored) — defines LOCAL_LANDING_PAGE_PATTERNS etc. -->
 <!-- If the file doesn't exist, that's fine — app.js uses sensible defaults. -->
-<script src="config.local.js" onerror="/* no personal config, that's fine */"></script>
+<script src="config.local.js"></script>
 
 <!-- Main dashboard logic — loads last so the DOM is ready -->
 <script src="app.js"></script>

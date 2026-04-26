@@ -87,6 +87,62 @@ chrome.tabs.onUpdated.addListener(() => {
   updateBadge();
 });
 
+// ─── Message handler: provide top sites from history to the newtab page ───────
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'getTopSites') {
+    getTopSitesFromHistory().then(sendResponse).catch(() => sendResponse([]));
+    return true; // keep message channel open for async response
+  }
+});
+
+async function getTopSitesFromHistory() {
+  try {
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const historyItems = await chrome.history.search({
+      text: '',
+      maxResults: 50,
+      startTime: oneWeekAgo,
+    });
+
+    const domainMap = {};
+    for (const item of historyItems) {
+      try {
+        const urlObj = new URL(item.url);
+        const domain = urlObj.hostname.replace(/^www\./, '');
+        if (!domain || domain === 'localhost' || urlObj.protocol === 'chrome-extension:') continue;
+
+        if (!domainMap[domain]) {
+          domainMap[domain] = {
+            url: item.url,
+            title: item.title || domain,
+            visitCount: 0,
+          };
+        }
+        domainMap[domain].visitCount += item.visitCount || 1;
+        if (!domainMap[domain].lastVisitTime || item.lastVisitTime > domainMap[domain].lastVisitTime) {
+          domainMap[domain].url = item.url;
+          if (item.title) domainMap[domain].title = item.title;
+          domainMap[domain].lastVisitTime = item.lastVisitTime;
+        }
+      } catch { /* skip malformed */ }
+    }
+
+    const sorted = Object.values(domainMap)
+      .sort((a, b) => b.visitCount - a.visitCount)
+      .slice(0, 8);
+
+    return sorted.map((item, i) => ({
+      id: `auto-${Date.now()}-${i}`,
+      url: item.url,
+      title: item.title,
+      order: i,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // ─── Initial run ─────────────────────────────────────────────────────────────
 
 // Run once immediately when the service worker first loads
