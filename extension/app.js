@@ -1381,6 +1381,8 @@ async function renderStaticDashboard() {
   // --- Footer stats ---
   const statTabs = document.getElementById('statTabs');
   if (statTabs) statTabs.textContent = openTabs.length;
+  const headerTabNum = document.getElementById('headerTabNum');
+  if (headerTabNum) headerTabNum.textContent = openTabs.length;
 
   // --- Check for duplicate Tab Out tabs ---
   checkTabOutDupes();
@@ -1521,6 +1523,8 @@ document.addEventListener('click', async (e) => {
     // Update footer
     const statTabs = document.getElementById('statTabs');
     if (statTabs) statTabs.textContent = openTabs.length;
+    const headerTabNum = document.getElementById('headerTabNum');
+    if (headerTabNum) headerTabNum.textContent = openTabs.length;
 
     showToast('标签已关闭');
     return;
@@ -1635,6 +1639,8 @@ document.addEventListener('click', async (e) => {
 
     const statTabs = document.getElementById('statTabs');
     if (statTabs) statTabs.textContent = openTabs.length;
+    const headerTabNum = document.getElementById('headerTabNum');
+    if (headerTabNum) headerTabNum.textContent = openTabs.length;
     return;
   }
 
