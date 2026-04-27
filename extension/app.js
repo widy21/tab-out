@@ -1216,11 +1216,14 @@ function renderDeferredItem(item) {
 function renderArchiveItem(item) {
   const ago = item.completedAt ? timeAgo(item.completedAt) : timeAgo(item.savedAt);
   return `
-    <div class="archive-item">
+    <div class="archive-item" data-archive-id="${item.id}">
       <a href="${item.url}" target="_blank" rel="noopener" class="archive-item-title" title="${(item.title || '').replace(/"/g, '&quot;')}">
         ${item.title || item.url}
       </a>
       <span class="archive-item-date">${ago}</span>
+      <button class="archive-dismiss" data-action="dismiss-archive" data-archive-id="${item.id}" title="删除">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+      </button>
     </div>`;
 }
 
