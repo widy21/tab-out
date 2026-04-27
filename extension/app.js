@@ -548,18 +548,31 @@ async function renderFavorites() {
       try { label = new URL(bm.url).hostname.replace(/^www\./, ''); } catch { label = bm.url; }
     }
     const displayLabel = label.length > 10 ? label.slice(0, 9) + '…' : label;
+    const fallbackLetter = (label[0] || '?').toUpperCase();
     return `
       <div class="favorite-item"
            data-action="open-favorite"
            data-url="${safeUrl}"
            title="${safeTitle}">
-        <img class="favorite-favicon" src="${favicon}" alt="" data-favicon-fallback>
+        <div class="favorite-favicon-wrap">
+          <img class="favorite-favicon" src="${favicon}" alt="">
+          <span class="favicon-fallback">${fallbackLetter}</span>
+        </div>
         <span class="favorite-label">${displayLabel}</span>
       </div>
     `;
   }).join('');
 
   bar.innerHTML = html;
+
+  // Show fallback letter when favicon fails to load
+  bar.querySelectorAll('.favorite-favicon').forEach(img => {
+    img.addEventListener('error', () => {
+      img.style.display = 'none';
+      const fallback = img.parentElement?.querySelector('.favicon-fallback');
+      if (fallback) fallback.style.display = 'flex';
+    }, { once: true });
+  });
 }
 
 
