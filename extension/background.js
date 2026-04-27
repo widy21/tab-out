@@ -75,17 +75,38 @@ chrome.runtime.onStartup.addListener(() => {
 // Update badge whenever a tab is opened
 chrome.tabs.onCreated.addListener(() => {
   updateBadge();
+  broadcastRefresh();
 });
 
 // Update badge whenever a tab is closed
 chrome.tabs.onRemoved.addListener(() => {
   updateBadge();
+  broadcastRefresh();
 });
 
 // Update badge when a tab's URL changes (e.g. navigating to/from chrome://)
 chrome.tabs.onUpdated.addListener(() => {
   updateBadge();
+  broadcastRefresh();
 });
+
+/**
+ * broadcastRefresh()
+ *
+ * Notify all open Tab Out new-tab pages to refresh their data.
+ */
+async function broadcastRefresh() {
+  try {
+    const extensionId = chrome.runtime.id;
+    const url = `chrome-extension://${extensionId}/index.html`;
+    const tabs = await chrome.tabs.query({ url });
+    for (const tab of tabs) {
+      try {
+        chrome.tabs.sendMessage(tab.id, { action: 'refreshTabs' });
+      } catch { /* tab may not have listener yet */ }
+    }
+  } catch { /* ignore */ }
+}
 
 // ─── Message handler: provide top sites from history to the newtab page ───────
 

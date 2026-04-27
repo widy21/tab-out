@@ -1955,3 +1955,10 @@ document.addEventListener('visibilitychange', () => {
     renderDashboard();
   }
 });
+
+// Real-time refresh: background service worker pushes updates when tabs change
+chrome.runtime.onMessage?.addListener((request) => {
+  if (request.action === 'refreshTabs') {
+    renderDashboard();
+  }
+});
