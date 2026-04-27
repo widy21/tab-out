@@ -518,11 +518,13 @@ function getDateDisplay() {
    FAVORITES — Quick-access site icons in the header
    ---------------------------------------------------------------- */
 
-function getFaviconUrl(url) {
-  if (!url) return '';
-  // Use Chrome's built-in favicon service for icons that match the bookmark bar
-  const cleanUrl = url.split('#')[0];
-  return `chrome://favicon/size/32@1x/${cleanUrl}`;
+function getFaviconUrl(url, size = 32) {
+  try {
+    const domain = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
+  } catch {
+    return '';
+  }
 }
 
 async function renderFavorites() {
