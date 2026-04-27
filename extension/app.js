@@ -661,7 +661,7 @@ async function renderFavorites() {
     const displayLabel = label.length > 10 ? label.slice(0, 9) + '…' : label;
     const isAutoItem = fav.id?.startsWith('auto-');
     const labelHtml = isEditing
-      ? `<input class="favorite-label-input" value="${displayLabel.replace(/"/g, '&quot;')}" data-action="rename-favorite" data-favorite-id="${fav.id}" data-original-url="${safeUrl}">`
+      ? `<input class="favorite-label-input" value="${displayLabel.replace(/"/g, '&quot;')}" data-action="rename-favorite" data-favorite-id="${fav.id}" data-original-url="${safeUrl}" id="fav-input-${fav.id}" name="fav-input-${fav.id}">`
       : `<span class="favorite-label">${displayLabel}</span>`;
     return `
       <div class="favorite-item"
@@ -1791,7 +1791,8 @@ document.addEventListener('click', async (e) => {
     const id = actionEl.dataset.favoriteId;
     const itemEl = actionEl.closest('.favorite-item');
     const url = itemEl?.dataset.url;
-    if (!id) return;
+    console.log('[tab-out] remove-favorite clicked:', { id, url });
+    if (!id) { console.log('[tab-out] no id, abort'); return; }
 
     if (id.startsWith('auto-')) {
       // Auto-detected item: add URL to removed list so it won't come back
@@ -1805,12 +1806,14 @@ document.addEventListener('click', async (e) => {
     } else {
       // Manual item: remove from favorites storage
       let favorites = await getFavorites();
+      console.log('[tab-out] before remove:', favorites.length, 'items');
       if (id === 'undefined' || !favorites.some(f => f.id === id)) {
         // Fallback: remove by URL if id is missing/invalid
         favorites = favorites.filter(f => f.url !== url);
       } else {
         favorites = favorites.filter(f => f.id !== id);
       }
+      console.log('[tab-out] after remove:', favorites.length, 'items');
       await saveFavorites(favorites);
     }
 
