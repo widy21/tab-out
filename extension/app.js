@@ -612,6 +612,11 @@ async function renderFavorites() {
   if (manualFavorites.length < 8) {
     autoDetected = await getAutoDetectedFavorites();
 
+    // Filter out URLs the user previously removed from auto-detected
+    const { removedAutoUrls = [] } = await chrome.storage.local.get('removedAutoUrls');
+    const removedSet = new Set(removedAutoUrls);
+    autoDetected = autoDetected.filter(f => !removedSet.has(f.url));
+
     // Fallback: if history gives too few results, supplement from open tabs
     if (autoDetected.length < 4) {
       const fromTabs = getTopSitesFromOpenTabs();
@@ -1716,10 +1721,26 @@ document.addEventListener('click', async (e) => {
   if (action === 'remove-favorite') {
     e.stopPropagation();
     const id = actionEl.dataset.favoriteId;
+    const itemEl = actionEl.closest('.favorite-item');
+    const url = itemEl?.dataset.url;
     if (!id) return;
-    let favorites = await getFavorites();
-    favorites = favorites.filter(f => f.id !== id);
-    await saveFavorites(favorites);
+
+    if (id.startsWith('auto-')) {
+      // Auto-detected item: add URL to removed list so it won't come back
+      if (url) {
+        const { removedAutoUrls = [] } = await chrome.storage.local.get('removedAutoUrls');
+        if (!removedAutoUrls.includes(url)) {
+          removedAutoUrls.push(url);
+          await chrome.storage.local.set({ removedAutoUrls });
+        }
+      }
+    } else {
+      // Manual item: remove from favorites storage
+      let favorites = await getFavorites();
+      favorites = favorites.filter(f => f.id !== id);
+      await saveFavorites(favorites);
+    }
+
     renderFavorites();
     return;
   }
