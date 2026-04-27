@@ -1787,6 +1787,26 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
+  // ---- Dismiss an archived item (permanently delete) ----
+  if (action === 'dismiss-archive') {
+    const id = actionEl.dataset.archiveId;
+    if (!id) return;
+
+    await dismissSavedTab(id);
+
+    const archiveItem = actionEl.closest('.archive-item');
+    if (archiveItem) {
+      archiveItem.style.transition = 'opacity 0.2s, transform 0.2s';
+      archiveItem.style.opacity = '0';
+      archiveItem.style.transform = 'translateX(20px)';
+      setTimeout(() => {
+        archiveItem.remove();
+        renderDeferredColumn(); // refresh counts
+      }, 200);
+    }
+    return;
+  }
+
   // Toggle edit mode
   if (action === 'toggle-favorites-edit') {
     const bar = document.getElementById('favoritesBar');
