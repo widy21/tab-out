@@ -1948,3 +1948,10 @@ document.addEventListener('input', async (e) => {
    ---------------------------------------------------------------- */
 applyFontScale();
 renderDashboard();
+
+// Refresh when user switches back to this tab (tabs may have been closed/opened elsewhere)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    renderDashboard();
+  }
+});
