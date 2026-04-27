@@ -638,14 +638,18 @@ async function renderFavorites() {
     ...autoDetected.slice(0, 8 - manualFavorites.length),
   ];
   const hasAuto = autoDetected.length > 0 && manualFavorites.length > 0;
+  const isEditing = bar.classList.contains('is-editing');
 
   let html = favorites.map((fav) => {
     const favicon = getFaviconUrl(fav.url);
     const safeTitle = (fav.title || fav.url).replace(/"/g, '&quot;');
     const safeUrl = (fav.url || '').replace(/"/g, '&quot;');
-    const label = (fav.title || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
+    const label = fav.customTitle || (fav.title || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
     const displayLabel = label.length > 10 ? label.slice(0, 9) + '…' : label;
     const isAutoItem = fav.id?.startsWith('auto-');
+    const labelHtml = isEditing
+      ? `<input class="favorite-label-input" value="${displayLabel.replace(/"/g, '&quot;')}" data-action="rename-favorite" data-favorite-id="${fav.id}" data-original-url="${safeUrl}">`
+      : `<span class="favorite-label">${displayLabel}</span>`;
     return `
       <div class="favorite-item"
            draggable="true"
@@ -653,7 +657,7 @@ async function renderFavorites() {
            data-action="open-favorite"
            data-url="${safeUrl}">
         <img class="favorite-favicon" src="${favicon}" alt="" data-favicon-fallback>
-        <span class="favorite-label">${displayLabel}</span>
+        ${labelHtml}
         <button class="favorite-remove" data-action="remove-favorite" data-favorite-id="${fav.id}" title="移除">×</button>
       </div>
     `;
@@ -666,8 +670,6 @@ async function renderFavorites() {
       </svg>
     </button>
   `;
-
-  const isEditing = bar.classList.contains('is-editing');
   html += `
     <button class="favorite-edit-btn" data-action="toggle-favorites-edit" title="${isEditing ? '完成' : '编辑'}">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -683,6 +685,50 @@ async function renderFavorites() {
 
   bar.innerHTML = html;
   attachFavoriteDragEvents(bar, manualFavorites.length > 0);
+
+  if (isEditing) {
+    bar.querySelectorAll('.favorite-label-input').forEach(input => {
+      input.addEventListener('blur', handleFavoriteRename);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          input.blur();
+        }
+      });
+    });
+  }
+}
+
+async function handleFavoriteRename(e) {
+  const input = e.target;
+  const id = input.dataset.favoriteId;
+  const url = input.dataset.originalUrl;
+  const newTitle = input.value.trim();
+  if (!newTitle || !id) return;
+
+  let favorites = await getFavorites();
+
+  if (id.startsWith('auto-')) {
+    // Auto-detected item: convert to manual with custom title
+    if (!favorites.some(f => f.url === url)) {
+      favorites.push({
+        id: Date.now().toString(),
+        url: url,
+        title: '',
+        customTitle: newTitle,
+        order: favorites.length,
+      });
+      await saveFavorites(favorites);
+    }
+  } else {
+    const idx = favorites.findIndex(f => f.id === id);
+    if (idx !== -1) {
+      favorites[idx].customTitle = newTitle;
+      await saveFavorites(favorites);
+    }
+  }
+
+  renderFavorites();
 }
 
 function attachFavoriteDragEvents(bar, canReorder) {
@@ -1709,6 +1755,11 @@ document.addEventListener('click', async (e) => {
   }
 
   /* ---- FAVORITES actions ---- */
+
+  // Rename-favorite input click (handled by blur listener; prevent open)
+  if (action === 'rename-favorite') {
+    return;
+  }
 
   // Open a favorite site
   if (action === 'open-favorite') {
