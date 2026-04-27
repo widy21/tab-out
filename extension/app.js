@@ -518,93 +518,6 @@ function getDateDisplay() {
    FAVORITES — Quick-access site icons in the header
    ---------------------------------------------------------------- */
 
-const FAVORITES_STORAGE_KEY = 'favorites';
-const MAX_FAVORITES = 10;
-
-async function getFavorites() {
-  try {
-    const result = await chrome.storage.local.get(FAVORITES_STORAGE_KEY);
-    let favorites = result[FAVORITES_STORAGE_KEY];
-    if (!Array.isArray(favorites)) return [];
-    // Backfill missing ids for old data
-    let changed = false;
-    favorites = favorites.map((f, i) => {
-      if (!f.id) {
-        changed = true;
-        return { ...f, id: 'manual-' + Date.now().toString() + '-' + i };
-      }
-      return f;
-    });
-    if (changed) {
-      await saveFavorites(favorites);
-    }
-    return favorites;
-  } catch {
-    return [];
-  }
-}
-
-async function saveFavorites(favorites) {
-  try {
-    await chrome.storage.local.set({ [FAVORITES_STORAGE_KEY]: favorites.slice(0, MAX_FAVORITES) });
-  } catch (err) {
-    console.warn('[tab-out] Failed to save favorites:', err);
-  }
-}
-
-/**
- * Auto-detect frequently visited sites from Chrome history.
- * Aggregated by domain, sorted by visit count, limited to 8.
- */
-async function getAutoDetectedFavorites() {
-  try {
-    // Retry once if service worker is asleep
-    let response;
-    try {
-      response = await chrome.runtime.sendMessage({ action: 'getTopSites' });
-    } catch {
-      await new Promise(r => setTimeout(r, 300));
-      response = await chrome.runtime.sendMessage({ action: 'getTopSites' });
-    }
-    return Array.isArray(response) ? response : [];
-  } catch (err) {
-    console.warn('[tab-out] Could not auto-detect favorites:', err);
-    return [];
-  }
-}
-
-/**
- * getTopSitesFromOpenTabs()
- *
- * Fallback: when chrome.history returns too few results, extract
- * unique domains from the user's currently open tabs.
- */
-function getTopSitesFromOpenTabs() {
-  const domainMap = {};
-  for (const tab of openTabs) {
-    try {
-      const urlObj = new URL(tab.url);
-      const domain = urlObj.hostname.replace(/^www\./, '');
-      if (!domain || domain === 'localhost' || urlObj.protocol === 'chrome-extension:') continue;
-
-      // Keep the first (or most recent) tab for each domain
-      if (!domainMap[domain]) {
-        domainMap[domain] = {
-          url: tab.url,
-          title: tab.title || domain,
-        };
-      }
-    } catch { /* skip malformed */ }
-  }
-
-  return Object.values(domainMap).slice(0, 8).map((item, i) => ({
-    id: `auto-tab-${Date.now()}-${i}`,
-    url: item.url,
-    title: item.title,
-    order: i,
-  }));
-}
-
 function getFaviconUrl(url, size = 32) {
   try {
     const domain = new URL(url).hostname;
@@ -618,210 +531,32 @@ async function renderFavorites() {
   const bar = document.getElementById('favoritesBar');
   if (!bar) return;
 
-  const manualFavorites = await getFavorites();
-  let autoDetected = [];
-
-  // Always mix manual + auto-detected: manual first, then auto to fill up to 8 slots
-  if (manualFavorites.length < 8) {
-    autoDetected = await getAutoDetectedFavorites();
-
-    // Filter out URLs the user previously removed from auto-detected
-    let { removedAutoUrls = [] } = await chrome.storage.local.get('removedAutoUrls');
-    // Migrate old full-URL entries to hostname format
-    let migrated = false;
-    removedAutoUrls = removedAutoUrls.map(entry => {
-      if (entry.includes('://')) {
-        try {
-          migrated = true;
-          return new URL(entry).hostname;
-        } catch { return entry; }
-      }
-      return entry;
-    });
-    if (migrated) {
-      await chrome.storage.local.set({ removedAutoUrls });
-    }
-    console.log('[tab-out] renderFavorites removedAutoUrls:', removedAutoUrls);
-    const removedSet = new Set(removedAutoUrls);
-    autoDetected = autoDetected.filter(f => {
-      try {
-        return !removedSet.has(new URL(f.url).hostname);
-      } catch {
-        return !removedSet.has(f.url);
-      }
-    });
-    console.log('[tab-out] renderFavorites autoDetected after filter:', autoDetected.length);
-
-    // Fallback: if history gives too few results, supplement from open tabs
-    if (autoDetected.length < 4) {
-      const fromTabs = getTopSitesFromOpenTabs();
-      const existingUrls = new Set(autoDetected.map(f => f.url));
-      for (const t of fromTabs) {
-        if (!existingUrls.has(t.url)) {
-          autoDetected.push(t);
-          existingUrls.add(t.url);
-        }
-      }
-    }
-
-    const manualUrls = new Set(manualFavorites.map(f => f.url));
-    autoDetected = autoDetected.filter(f => !manualUrls.has(f.url));
+  let bookmarks = [];
+  try {
+    const children = await chrome.bookmarks.getChildren('1'); // Bookmark Bar
+    bookmarks = children.filter(b => b.url); // Exclude folders
+  } catch (err) {
+    console.warn('[tab-out] Could not read bookmarks:', err);
   }
 
-  const favorites = [
-    ...manualFavorites,
-    ...autoDetected.slice(0, 8 - manualFavorites.length),
-  ];
-  const hasAuto = autoDetected.length > 0 && manualFavorites.length > 0;
-  const isEditing = bar.classList.contains('is-editing');
-
-  let html = favorites.map((fav) => {
-    const favicon = getFaviconUrl(fav.url);
-    const safeTitle = (fav.title || fav.url).replace(/"/g, '&quot;');
-    const safeUrl = (fav.url || '').replace(/"/g, '&quot;');
-    const label = fav.customTitle || (fav.title || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
+  const html = bookmarks.map((bm) => {
+    const favicon = getFaviconUrl(bm.url);
+    const safeTitle = (bm.title || bm.url).replace(/"/g, '&quot;');
+    const safeUrl = (bm.url || '').replace(/"/g, '&quot;');
+    const label = (bm.title || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
     const displayLabel = label.length > 10 ? label.slice(0, 9) + '…' : label;
-    const isAutoItem = fav.id?.startsWith('auto-');
-    const labelHtml = isEditing
-      ? `<input class="favorite-label-input" value="${displayLabel.replace(/"/g, '&quot;')}" data-action="rename-favorite" data-favorite-id="${fav.id}" data-original-url="${safeUrl}" id="fav-input-${fav.id}" name="fav-input-${fav.id}">`
-      : `<span class="favorite-label">${displayLabel}</span>`;
     return `
       <div class="favorite-item"
-           draggable="true"
-           data-favorite-id="${fav.id}"
            data-action="open-favorite"
-           data-url="${safeUrl}">
+           data-url="${safeUrl}"
+           title="${safeTitle}">
         <img class="favorite-favicon" src="${favicon}" alt="" data-favicon-fallback>
-        ${labelHtml}
-        <button class="favorite-remove" data-action="remove-favorite" data-favorite-id="${fav.id}" title="移除">×</button>
+        <span class="favorite-label">${displayLabel}</span>
       </div>
     `;
   }).join('');
 
-  html += `
-    <button class="favorite-add" data-action="show-add-favorite" title="添加网站">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-      </svg>
-    </button>
-  `;
-  html += `
-    <button class="favorite-edit-btn" data-action="toggle-favorites-edit" title="${isEditing ? '完成' : '编辑'}">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-      </svg>
-      ${isEditing ? '完成' : '编辑'}
-    </button>
-  `;
-
-  if (hasAuto) {
-    html += `<span class="favorite-auto-hint">自动识别</span>`;
-  }
-
   bar.innerHTML = html;
-  attachFavoriteDragEvents(bar, manualFavorites.length > 0);
-
-  if (isEditing) {
-    bar.querySelectorAll('.favorite-label-input').forEach(input => {
-      input.addEventListener('blur', handleFavoriteRename);
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          input.blur();
-        }
-      });
-    });
-  }
-}
-
-async function handleFavoriteRename(e) {
-  const input = e.target;
-  const id = input.dataset.favoriteId;
-  const url = input.dataset.originalUrl;
-  const newTitle = input.value.trim();
-  if (!newTitle || !id) return;
-
-  let favorites = await getFavorites();
-
-  if (id.startsWith('auto-')) {
-    // Auto-detected item: convert to manual with custom title
-    if (!favorites.some(f => f.url === url)) {
-      favorites.push({
-        id: Date.now().toString(),
-        url: url,
-        title: '',
-        customTitle: newTitle,
-        order: favorites.length,
-      });
-      await saveFavorites(favorites);
-    }
-  } else {
-    // Manual item: update by id, fallback to URL
-    let idx = favorites.findIndex(f => f.id === id);
-    if (idx === -1 && url) {
-      idx = favorites.findIndex(f => f.url === url);
-    }
-    if (idx !== -1) {
-      favorites[idx].customTitle = newTitle;
-      await saveFavorites(favorites);
-    }
-  }
-
-  renderFavorites();
-}
-
-function attachFavoriteDragEvents(bar, canReorder) {
-  let draggedId = null;
-
-  bar.querySelectorAll('.favorite-item').forEach(item => {
-    item.addEventListener('dragstart', (e) => {
-      if (!canReorder) {
-        e.preventDefault();
-        return;
-      }
-      draggedId = item.dataset.favoriteId;
-      item.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', draggedId);
-    });
-
-    item.addEventListener('dragend', () => {
-      item.classList.remove('dragging');
-      bar.querySelectorAll('.favorite-item').forEach(el => el.classList.remove('drag-over'));
-      draggedId = null;
-    });
-
-    item.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      if (!canReorder || !draggedId) return;
-      e.dataTransfer.dropEffect = 'move';
-      if (item.dataset.favoriteId !== draggedId) {
-        item.classList.add('drag-over');
-      }
-    });
-
-    item.addEventListener('dragleave', () => {
-      item.classList.remove('drag-over');
-    });
-
-    item.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      item.classList.remove('drag-over');
-      if (!canReorder || !draggedId || item.dataset.favoriteId === draggedId) return;
-
-      const favorites = await getFavorites();
-      if (favorites.length === 0) return;
-
-      const fromIndex = favorites.findIndex(f => f.id === draggedId);
-      const toIndex = favorites.findIndex(f => f.id === item.dataset.favoriteId);
-      if (fromIndex === -1 || toIndex === -1) return;
-
-      const [moved] = favorites.splice(fromIndex, 1);
-      favorites.splice(toIndex, 0, moved);
-      await saveFavorites(favorites);
-      renderFavorites();
-    });
-  });
 }
 
 
@@ -1795,121 +1530,10 @@ document.addEventListener('click', async (e) => {
 
   /* ---- FAVORITES actions ---- */
 
-  // Rename-favorite input click (handled by blur listener; prevent open)
-  if (action === 'rename-favorite') {
-    return;
-  }
-
   // Open a favorite site
   if (action === 'open-favorite') {
     const url = actionEl.dataset.url;
     if (url) window.open(url, '_blank');
-    return;
-  }
-
-  // Remove a favorite (edit mode)
-  if (action === 'remove-favorite') {
-    e.stopPropagation();
-    const id = actionEl.dataset.favoriteId;
-    const itemEl = actionEl.closest('.favorite-item');
-    const url = itemEl?.dataset.url;
-    console.log('[tab-out] remove-favorite clicked:', { id, url });
-    if (!id) { console.log('[tab-out] no id, abort'); return; }
-
-    if (id.startsWith('auto-')) {
-      // Auto-detected item: add hostname to removed list so it won't come back
-      if (url) {
-        try {
-          const hostname = new URL(url).hostname;
-          const { removedAutoUrls = [] } = await chrome.storage.local.get('removedAutoUrls');
-          console.log('[tab-out] auto remove hostname:', hostname, 'current list:', removedAutoUrls);
-          if (!removedAutoUrls.includes(hostname)) {
-            removedAutoUrls.push(hostname);
-            await chrome.storage.local.set({ removedAutoUrls });
-            console.log('[tab-out] saved removedAutoUrls:', removedAutoUrls);
-          }
-        } catch (err) {
-          console.error('[tab-out] auto remove error:', err);
-        }
-      }
-    } else {
-      // Manual item: remove from favorites storage
-      let favorites = await getFavorites();
-      console.log('[tab-out] before remove:', favorites.length, 'items');
-      if (id === 'undefined' || !favorites.some(f => f.id === id)) {
-        // Fallback: remove by URL if id is missing/invalid
-        favorites = favorites.filter(f => f.url !== url);
-      } else {
-        favorites = favorites.filter(f => f.id !== id);
-      }
-      console.log('[tab-out] after remove:', favorites.length, 'items');
-      await saveFavorites(favorites);
-    }
-
-    renderFavorites();
-    return;
-  }
-
-  // Show inline add form
-  if (action === 'show-add-favorite') {
-    e.stopPropagation();
-    const addBtn = actionEl.closest('.favorite-add');
-    if (!addBtn) return;
-    const form = document.createElement('div');
-    form.className = 'favorite-add-form';
-    form.innerHTML = `
-      <input type="url" placeholder="输入网址，如 example.com" id="favoriteUrlInput">
-      <button class="btn-add" data-action="add-favorite">添加</button>
-      <button class="btn-cancel" data-action="cancel-add-favorite">取消</button>
-    `;
-    addBtn.replaceWith(form);
-    const input = document.getElementById('favoriteUrlInput');
-    if (input) { input.focus(); }
-    return;
-  }
-
-  // Add a new favorite
-  if (action === 'add-favorite') {
-    const input = document.getElementById('favoriteUrlInput');
-    const rawUrl = input?.value.trim();
-    if (!rawUrl) return;
-
-    let finalUrl = rawUrl;
-    if (!/^https?:\/\//i.test(finalUrl)) finalUrl = 'https://' + finalUrl;
-
-    let title = finalUrl;
-    try {
-      const historyItems = await chrome.runtime.sendMessage({ action: 'getTopSites' });
-      const match = historyItems?.find(h => h.url === finalUrl || (h.url && h.url.replace(/^https?:\/\/(www\.)?/, '') === finalUrl.replace(/^https?:\/\/(www\.)?/, '')));
-      if (match?.title) title = match.title;
-    } catch { /* ignore */ }
-
-    const openTab = openTabs.find(t => t.url === finalUrl || (t.url && t.url.replace(/^https?:\/\/(www\.)?/, '') === finalUrl.replace(/^https?:\/\/(www\.)?/, '')));
-    if (openTab?.title) title = openTab.title;
-
-    let favorites = await getFavorites();
-
-    // If this is the first manual favorite, convert auto-detected ones first
-    // so they don't disappear when we switch from auto to manual mode.
-    if (favorites.length === 0) {
-      const autoDetected = await getAutoDetectedFavorites();
-      favorites = autoDetected.map(f => ({ ...f }));
-    }
-
-    favorites.push({
-      id: Date.now().toString(),
-      url: finalUrl,
-      title: title,
-      order: favorites.length,
-    });
-    await saveFavorites(favorites);
-    renderFavorites();
-    return;
-  }
-
-  // Cancel adding
-  if (action === 'cancel-add-favorite') {
-    renderFavorites();
     return;
   }
 
@@ -1929,16 +1553,6 @@ document.addEventListener('click', async (e) => {
         archiveItem.remove();
         renderDeferredColumn(); // refresh counts
       }, 200);
-    }
-    return;
-  }
-
-  // Toggle edit mode
-  if (action === 'toggle-favorites-edit') {
-    const bar = document.getElementById('favoritesBar');
-    if (bar) {
-      bar.classList.toggle('is-editing');
-      renderFavorites();
     }
     return;
   }
@@ -2016,3 +1630,9 @@ chrome.runtime.onMessage?.addListener((request) => {
     renderDashboard();
   }
 });
+
+// Refresh favorites when bookmarks change
+chrome.bookmarks?.onChanged?.addListener(() => renderFavorites());
+chrome.bookmarks?.onCreated?.addListener(() => renderFavorites());
+chrome.bookmarks?.onRemoved?.addListener(() => renderFavorites());
+chrome.bookmarks?.onMoved?.addListener(() => renderFavorites());
