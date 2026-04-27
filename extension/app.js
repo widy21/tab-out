@@ -626,7 +626,21 @@ async function renderFavorites() {
     autoDetected = await getAutoDetectedFavorites();
 
     // Filter out URLs the user previously removed from auto-detected
-    const { removedAutoUrls = [] } = await chrome.storage.local.get('removedAutoUrls');
+    let { removedAutoUrls = [] } = await chrome.storage.local.get('removedAutoUrls');
+    // Migrate old full-URL entries to hostname format
+    let migrated = false;
+    removedAutoUrls = removedAutoUrls.map(entry => {
+      if (entry.includes('://')) {
+        try {
+          migrated = true;
+          return new URL(entry).hostname;
+        } catch { return entry; }
+      }
+      return entry;
+    });
+    if (migrated) {
+      await chrome.storage.local.set({ removedAutoUrls });
+    }
     console.log('[tab-out] renderFavorites removedAutoUrls:', removedAutoUrls);
     const removedSet = new Set(removedAutoUrls);
     autoDetected = autoDetected.filter(f => {
