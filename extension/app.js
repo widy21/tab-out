@@ -627,8 +627,16 @@ async function renderFavorites() {
 
     // Filter out URLs the user previously removed from auto-detected
     const { removedAutoUrls = [] } = await chrome.storage.local.get('removedAutoUrls');
+    console.log('[tab-out] renderFavorites removedAutoUrls:', removedAutoUrls);
     const removedSet = new Set(removedAutoUrls);
-    autoDetected = autoDetected.filter(f => !removedSet.has(f.url));
+    autoDetected = autoDetected.filter(f => {
+      try {
+        return !removedSet.has(new URL(f.url).hostname);
+      } catch {
+        return !removedSet.has(f.url);
+      }
+    });
+    console.log('[tab-out] renderFavorites autoDetected after filter:', autoDetected.length);
 
     // Fallback: if history gives too few results, supplement from open tabs
     if (autoDetected.length < 4) {
@@ -1795,12 +1803,19 @@ document.addEventListener('click', async (e) => {
     if (!id) { console.log('[tab-out] no id, abort'); return; }
 
     if (id.startsWith('auto-')) {
-      // Auto-detected item: add URL to removed list so it won't come back
+      // Auto-detected item: add hostname to removed list so it won't come back
       if (url) {
-        const { removedAutoUrls = [] } = await chrome.storage.local.get('removedAutoUrls');
-        if (!removedAutoUrls.includes(url)) {
-          removedAutoUrls.push(url);
-          await chrome.storage.local.set({ removedAutoUrls });
+        try {
+          const hostname = new URL(url).hostname;
+          const { removedAutoUrls = [] } = await chrome.storage.local.get('removedAutoUrls');
+          console.log('[tab-out] auto remove hostname:', hostname, 'current list:', removedAutoUrls);
+          if (!removedAutoUrls.includes(hostname)) {
+            removedAutoUrls.push(hostname);
+            await chrome.storage.local.set({ removedAutoUrls });
+            console.log('[tab-out] saved removedAutoUrls:', removedAutoUrls);
+          }
+        } catch (err) {
+          console.error('[tab-out] auto remove error:', err);
         }
       }
     } else {
