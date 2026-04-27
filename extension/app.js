@@ -524,8 +524,21 @@ const MAX_FAVORITES = 10;
 async function getFavorites() {
   try {
     const result = await chrome.storage.local.get(FAVORITES_STORAGE_KEY);
-    const favorites = result[FAVORITES_STORAGE_KEY];
-    return Array.isArray(favorites) ? favorites : [];
+    let favorites = result[FAVORITES_STORAGE_KEY];
+    if (!Array.isArray(favorites)) return [];
+    // Backfill missing ids for old data
+    let changed = false;
+    favorites = favorites.map((f, i) => {
+      if (!f.id) {
+        changed = true;
+        return { ...f, id: 'manual-' + Date.now().toString() + '-' + i };
+      }
+      return f;
+    });
+    if (changed) {
+      await saveFavorites(favorites);
+    }
+    return favorites;
   } catch {
     return [];
   }
@@ -721,7 +734,11 @@ async function handleFavoriteRename(e) {
       await saveFavorites(favorites);
     }
   } else {
-    const idx = favorites.findIndex(f => f.id === id);
+    // Manual item: update by id, fallback to URL
+    let idx = favorites.findIndex(f => f.id === id);
+    if (idx === -1 && url) {
+      idx = favorites.findIndex(f => f.url === url);
+    }
     if (idx !== -1) {
       favorites[idx].customTitle = newTitle;
       await saveFavorites(favorites);
@@ -1788,7 +1805,12 @@ document.addEventListener('click', async (e) => {
     } else {
       // Manual item: remove from favorites storage
       let favorites = await getFavorites();
-      favorites = favorites.filter(f => f.id !== id);
+      if (id === 'undefined' || !favorites.some(f => f.id === id)) {
+        // Fallback: remove by URL if id is missing/invalid
+        favorites = favorites.filter(f => f.url !== url);
+      } else {
+        favorites = favorites.filter(f => f.id !== id);
+      }
       await saveFavorites(favorites);
     }
 
