@@ -518,13 +518,11 @@ function getDateDisplay() {
    FAVORITES — Quick-access site icons in the header
    ---------------------------------------------------------------- */
 
-function getFaviconUrl(url, size = 32) {
-  try {
-    const domain = new URL(url).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
-  } catch {
-    return '';
-  }
+function getFaviconUrl(url) {
+  if (!url) return '';
+  // Use Chrome's built-in favicon service for icons that match the bookmark bar
+  const cleanUrl = url.split('#')[0];
+  return `chrome://favicon/size/32@1x/${cleanUrl}`;
 }
 
 async function renderFavorites() {
@@ -543,7 +541,10 @@ async function renderFavorites() {
     const favicon = getFaviconUrl(bm.url);
     const safeTitle = (bm.title || bm.url).replace(/"/g, '&quot;');
     const safeUrl = (bm.url || '').replace(/"/g, '&quot;');
-    const label = (bm.title || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
+    let label = bm.title?.trim();
+    if (!label) {
+      try { label = new URL(bm.url).hostname.replace(/^www\./, ''); } catch { label = bm.url; }
+    }
     const displayLabel = label.length > 10 ? label.slice(0, 9) + '…' : label;
     return `
       <div class="favorite-item"
