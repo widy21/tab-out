@@ -555,7 +555,7 @@ async function renderFavorites() {
            data-url="${safeUrl}"
            title="${safeTitle}">
         <div class="favorite-favicon-wrap">
-          <img class="favorite-favicon" src="${favicon}" alt="">
+          <img class="favorite-favicon" src="${favicon}" alt="" data-domain="${new URL(bm.url).hostname}">
           <span class="favicon-fallback">${fallbackLetter}</span>
         </div>
         <span class="favorite-label">${displayLabel}</span>
@@ -565,13 +565,22 @@ async function renderFavorites() {
 
   bar.innerHTML = html;
 
-  // Show fallback letter when favicon fails to load
+  // Try multiple favicon sources before giving up
   bar.querySelectorAll('.favorite-favicon').forEach(img => {
+    const domain = img.dataset.domain;
     img.addEventListener('error', () => {
-      img.style.display = 'none';
-      const fallback = img.parentElement?.querySelector('.favicon-fallback');
-      if (fallback) fallback.style.display = 'flex';
-    }, { once: true });
+      if (domain && !img.dataset.triedDuck) {
+        img.dataset.triedDuck = 'true';
+        img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+      } else if (domain && !img.dataset.triedDirect) {
+        img.dataset.triedDirect = 'true';
+        img.src = `https://${domain}/favicon.ico`;
+      } else {
+        img.style.display = 'none';
+        const fallback = img.parentElement?.querySelector('.favicon-fallback');
+        if (fallback) fallback.style.display = 'flex';
+      }
+    });
   });
 }
 
