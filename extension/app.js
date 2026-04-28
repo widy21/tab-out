@@ -548,15 +548,18 @@ async function renderFavorites() {
       try { label = new URL(bm.url).hostname.replace(/^www\./, ''); } catch { label = bm.url; }
     }
     const displayLabel = label.length > 10 ? label.slice(0, 9) + '…' : label;
+    const domain = new URL(bm.url).hostname;
     const fallbackLetter = (label[0] || '?').toUpperCase();
+    const hue = domain.split('').reduce((s, c) => s + c.charCodeAt(0), 0) % 360;
+    const fallbackBg = `hsl(${hue}, 55%, 45%)`;
     return `
       <div class="favorite-item"
            data-action="open-favorite"
            data-url="${safeUrl}"
            title="${safeTitle}">
         <div class="favorite-favicon-wrap">
-          <img class="favorite-favicon" src="${favicon}" alt="" data-domain="${new URL(bm.url).hostname}">
-          <span class="favicon-fallback">${fallbackLetter}</span>
+          <img class="favorite-favicon" src="${favicon}" alt="" data-domain="${domain}">
+          <span class="favicon-fallback" style="background:${fallbackBg}">${fallbackLetter}</span>
         </div>
         <span class="favorite-label">${displayLabel}</span>
       </div>

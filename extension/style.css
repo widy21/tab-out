@@ -1279,15 +1279,15 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   display: none;
   width: 22px;
   height: 22px;
-  border-radius: 50%;
-  background: var(--accent-amber);
-  color: var(--ink);
-  font-size: 10px;
-  font-weight: 600;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
   align-items: center;
   justify-content: center;
   text-transform: uppercase;
   flex-shrink: 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
 
 .favorite-label {
