@@ -115,6 +115,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     getTopSitesFromHistory().then(sendResponse).catch(() => sendResponse([]));
     return true; // keep message channel open for async response
   }
+
+  if (request.action === 'getFavicon') {
+    if (chrome.favicon && chrome.favicon.getFavicon) {
+      chrome.favicon.getFavicon({ pageUrl: request.url })
+        .then(async (imageData) => {
+          const canvas = new OffscreenCanvas(imageData.width, imageData.height);
+          const ctx = canvas.getContext('2d');
+          ctx.putImageData(imageData, 0, 0);
+          const blob = await canvas.convertToBlob({ type: 'image/png' });
+          const arrayBuffer = await blob.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          let binary = '';
+          for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          sendResponse({ dataUrl: `data:image/png;base64,${btoa(binary)}` });
+        })
+        .catch(() => sendResponse({ dataUrl: '' }));
+    } else {
+      sendResponse({ dataUrl: '' });
+    }
+    return true;
+  }
 });
 
 async function getTopSitesFromHistory() {
