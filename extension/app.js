@@ -559,7 +559,7 @@ async function renderFavorites() {
            title="${safeTitle}">
         <div class="favorite-favicon-wrap">
           <img class="favorite-favicon" src="" alt="" data-url="${bm.url}" style="display:none">
-          <span class="favicon-fallback" style="background:${fallbackBg}">${fallbackLetter}</span>
+          <span class="favicon-fallback" style="display:flex;background:${fallbackBg}">${fallbackLetter}</span>
         </div>
         <span class="favorite-label">${displayLabel}</span>
       </div>
